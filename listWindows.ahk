@@ -17,25 +17,44 @@ listWindows() {
   activateAHK := Format("{}\activateWindow.ahk", A_ScriptDir)
   ; ウィンドウタイトルに含まれていたら追加する文字列
   appendPatterns := Map(
-  "受信", "jushin",
-  "予定", "yotei"
+    "受信", "jushin",
+    "予定", "yotei"
   )
-  ; 除外するプロセス
-  excludeProcesses:= Map(
-  "CLOCKPOD64.EXE", "1"
-  )
+  ; 除外するウィンドウ
 
-  list := GenerateWindowList(appendPatterns, excludeProcesses, activateAHK)
+  excludeWindows:= Map(
+    "CLOCKPOD64.EXE", "",
+  )
+  ; 例:
+  ; - タイトルが hoge と完全一致するすべてのプロセスを除外
+  ; - タイトルが fuga と完全一致するすべてのプロセスを除外
+  ; - piyo のプロセスでタイトルが a と完全一致するウィンドウを除外
+  ; excludeWindows:= Map(
+  ;   "", Map(
+  ;     "hoge", "",
+  ;     "fuga", "",
+  ;   ),
+  ;   "piyo", "a",
+  ; )
 
   if (FileExist(listFile)) {
     FileDelete(listFile)
   }
+
+  list := GenerateWindowList(appendPatterns, excludeWindows, activateAHK)
   FileAppend(list, listFile, "UTF-8")
 
   Run(Format('{} -N -U NONE -i NONE -u ~/vimfiles/vimrcLauncher -c "CtrlPLauncher! windows"', pathToVim))
+  Loop {
+    if (WinExist("vimLauncher")) {
+      WinActivate()
+      break
+    }
+    Sleep(50)
+  }
 }
 
-GenerateWindowList(patterns, excludeProcesses, activateAHK) {
+GenerateWindowList(patterns, excludeWindows, activateAHK) {
   local list := ""
   idList := WinGetList(, , "Program Manager")
   for id in idList {
@@ -45,7 +64,7 @@ GenerateWindowList(patterns, excludeProcesses, activateAHK) {
     }
 
     process := WinGetProcessName("ahk_id " id)
-    if (excludeProcesses.has(process)) {
+    if (exclude(excludeWindows, process, title)) {
       continue
     }
 
@@ -55,6 +74,27 @@ GenerateWindowList(patterns, excludeProcesses, activateAHK) {
     )
   }
   return list
+}
+
+exclude(excludeWindows, process, title) {
+  ; タイトルに完全一致するすべてのプロセスのウィンドウを除外
+  if (excludeWindows.has("")) {
+    if (excludeWindows[""].has(title)) {
+      return true
+    }
+  }
+
+  ; プロセス名に完全一致するウィンドウを除外
+  if (excludeWindows.has(process)) {
+    if (excludeWindows[process] == "") {
+      return true
+    } else if (excludeWindows[process] == title){
+      ; ウィンドウタイトルも完全一致するウィンドウを除外
+      return true
+    }
+  }
+
+  return false
 }
 
 getAppendString(s, patterns) {

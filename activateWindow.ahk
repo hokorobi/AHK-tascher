@@ -9,7 +9,7 @@ SetControlDelay -1
 #SingleInstance force ;同じスクリプトを一つだけ起動。
 SetTitleMatchMode(2) ;中間一致。Autoexec section にないといけない。
 
+; 消えてる場合もあるのでチェック
 if (WinExist(A_Args[1])) {
-    WinActivate(A_Args[1])
+  WinActivate(A_Args[1])
 }
-ExitApp()
