@@ -21,7 +21,6 @@ listWindows() {
     "予定", "yotei"
   )
   ; 除外するウィンドウ
-
   excludeWindows:= Map(
     "CLOCKPOD64.EXE", "",
   )
@@ -55,9 +54,14 @@ listWindows() {
 }
 
 GenerateWindowList(patterns, excludeWindows, activateAHK) {
+  activeId := WinGetID("A")
   local list := ""
   idList := WinGetList(, , "Program Manager")
   for id in idList {
+    ; アクティブウィンドウはリストから除外
+    if (activeId == id) {
+      continue
+    }
     title := WinGetTitle("ahk_id " id)
     if (title == "") {
       continue
